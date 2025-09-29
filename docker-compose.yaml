@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  auto_symlink:
+    # 使用官方镜像
+    image: shenxianmq/auto_symlink:latest
+    
+    # 容器名称
+    container_name: auto_symlink
+    
+    # 设置时区为中国时区
+    environment:
+      - TZ=Asia/Shanghai
+    
+    # 端口映射：将容器的8095端口映射到宿主机的8095端口
+    # 这样可以通过 http://localhost:8095 访问Web管理界面
+    ports:
+      - "8095:8095"
+    
+    # 卷挂载配置
+    volumes:
+      # 1. 云盘路径映射（重要：必须使用绝对路径）
+      # 格式：宿主机路径:容器内路径:rslave
+      # rslave模式确保软链接指向正确的真实路径
+      # 请根据您的实际云盘挂载路径修改 /your/cloud/path
+      - /your/cloud/path:/your/cloud/path:rslave
+      
+      # 2. 媒体库路径映射
+      # 这是软链接创建的目标位置
+      # 请根据您的实际媒体库路径修改 /your/media/path
+      - /your/media/path:/media
+      
+      # 3. 配置文件持久化
+      # 将配置文件目录映射到宿主机，确保配置不会丢失
+      # 请根据您的实际需求修改配置文件路径
+      - ./config:/app/config
+      
+      # 4. 日志文件持久化（可选）
+      # 将日志文件保存到宿主机，方便查看和调试
+      - ./logs:/app/logs
+    
+    # 以root用户运行（确保有足够权限创建软链接）
+    user: "0:0"
+    
+    # 容器重启策略：除非手动停止，否则总是重启
+    restart: unless-stopped
+    
+    # 网络模式：使用宿主机网络（可选，根据需求调整）
+    # network_mode: host
+    
+    # 健康检查（可选）
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8095"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+# 网络配置（可选）
+networks:
+  default:
+    name: auto_symlink_network
+
+# 卷配置（可选，用于数据持久化）
+volumes:
+  config_data:
+    driver: local
+  logs_data:
+    driver: local
